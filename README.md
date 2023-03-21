@@ -1,6 +1,6 @@
 # GPT Helper for Laravel
 
-This package provides seamless integration of GPT (ChatGPT) with Laravel, allowing you to generate templates and modify files using ChatGPT. With the powerful GPT models and Laravel's artisan commands, you can easily customize and enhance your Laravel application.
+This package provides basic integration of GPT (ChatGPT) with Laravel, allowing you to generate templates and modify files using ChatGPT. With the powerful GPT models and Laravel's artisan commands, you can easily customize and enhance your Laravel application.
 
 ## Installation
 
@@ -16,7 +16,7 @@ The package will automatically register itself.
 You can publish the config file with:
 
 ```bash
-php artisan vendor:publish --provider="GptHelperForLaravel\Console\GptTemplatesServiceProvider" --tag="config"
+php artisan vendor:publish --provider="GptHelperForLaravel\GptServiceProvider" --tag="config"
 ```
 
 This will create a gpt-helper.php config file in your config directory. You can set your ChatGPT API key, model, GPT settings, and Domain-Driven Design starting directory in the configuration file.
@@ -26,7 +26,7 @@ This will create a gpt-helper.php config file in your config directory. You can 
 You can publish the language files with:
 
 ```bash
-php artisan vendor:publish --provider="GptHelperForLaravel\Console\GptTemplatesServiceProvider" --tag="lang"
+php artisan vendor:publish --provider="GptHelperForLaravel\GptServiceProvider" --tag="lang"
 ```
 
 This will create a resources/lang/vendor/gpt-helper directory, where you can store your language files.
@@ -49,11 +49,7 @@ The following templates are available:
 
 - Model
 - Controller
-- Request
-- Resource
-- Migration
-- Factory
-- Seeder
+- ... more coming soon
 
 ## Available Settings
 
