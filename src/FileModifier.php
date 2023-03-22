@@ -2,19 +2,26 @@
 
 namespace GptHelperForLaravel;
 
+use Illuminate\Console\Concerns\InteractsWithIO;
 use Illuminate\Contracts\Foundation\Application as ApplicationContract;
+use Illuminate\Foundation\Testing\Concerns\InteractsWithConsole;
+use Psr\Container\ContainerExceptionInterface;
+use Psr\Container\NotFoundExceptionInterface;
 use Symfony\Component\Console\Input\ArgvInput;
 
 class FileModifier
 {
-    protected $gptApiService;
+    /**
+     * @var GptApiService
+     */
+    protected GptApiService $gptApiService;
 
     /**
      * The application implementation.
      *
-     * @var \Illuminate\Contracts\Foundation\Application
+     * @var ApplicationContract
      */
-    protected $app;
+    protected ApplicationContract $app;
 
     public function __construct(
         GptApiService $gptApiService,
@@ -30,19 +37,29 @@ class FileModifier
      *
      * @param $path
      * @param $contents
-     * @return mixed|string
+     * @return string
      */
-    public function modifyGeneratedFile($path, $contents)
+    public function modifyGeneratedFile($path, $contents): string
     {
         $prompt = $this->getConsolePrompt();
         if (!$prompt) {
             return $contents;
         }
 
+        if (!$this->gptApiService->enabled && $this->app->runningInConsole()) {
+            $this->consoleError('GPT Helper is not enabled. Please check your .env file.');
+            return $contents;
+        }
+
         return $this->getResponse($prompt, $path, $contents) ?? $contents;
     }
 
-    public function getConsolePrompt()
+    /**
+     * Get the prompt from the user
+     *
+     * @return mixed|null
+     */
+    public function getConsolePrompt(): ?string
     {
         if ($this->app->runningInConsole() &&
             ($input = new ArgvInput())->hasParameterOption('--prompt')) {
@@ -63,34 +80,34 @@ class FileModifier
         // Use regex or any other method to determine the file type
         // based on the file path and return the file type
         $types = [
-            'action' => '/.*Action\.php$/',
-            'controller' => '/.*Controller\.php$/',
+            'action' => '/.*Action$/',
+            'controller' => '/.*Controller$/',
             'model' => '/.*Model$/',
-            'request' => '/.*Request\.php$/',
-            'resource' => '/.*Resource\.php$/',
-            'test' => '/.*Test\.php$/',
-            'factory' => '/.*Factory\.php$/',
-            'seeder' => '/.*Seeder\.php$/',
-            'migration' => '/.*Migration\.php$/',
-            'event' => '/.*Event\.php$/',
-            'listener' => '/.*Listener\.php$/',
-            'job' => '/.*Job\.php$/',
-            'mail' => '/.*Mail\.php$/',
-            'notification' => '/.*Notification\.php$/',
-            'rule' => '/.*Rule\.php$/',
-            'view' => '/.*View\.php$/',
-            'blade' => '/.*Blade\.php$/',
-            'markdown' => '/.*Markdown\.php$/',
-            'component' => '/.*Component\.php$/',
-            'middleware' => '/.*Middleware\.php$/',
-            'provider' => '/.*Provider\.php$/',
-            'channel' => '/.*Channel\.php$/',
-            'exception' => '/.*Exception\.php$/',
-            'console' => '/.*Console\.php$/',
-            'command' => '/.*Command\.php$/',
-            'trait' => '/.*Trait\.php$/',
-            'interface' => '/.*Interface\.php$/',
-            'enum' => '/.*Enum\.php$/',
+            'request' => '/.*Request$/',
+            'resource' => '/.*Resource$/',
+            'test' => '/.*Test$/',
+            'factory' => '/.*Factory$/',
+            'seeder' => '/.*Seeder$/',
+            'migration' => '/.*Migration$/',
+            'event' => '/.*Event$/',
+            'listener' => '/.*Listener$/',
+            'job' => '/.*Job$/',
+            'mail' => '/.*Mail$/',
+            'notification' => '/.*Notification$/',
+            'rule' => '/.*Rule$/',
+            'view' => '/.*View$/',
+            'blade' => '/.*Blade$/',
+            'markdown' => '/.*Markdown$/',
+            'component' => '/.*Component$/',
+            'middleware' => '/.*Middleware$/',
+            'provider' => '/.*Provider$/',
+            'channel' => '/.*Channel$/',
+            'exception' => '/.*Exception$/',
+            'console' => '/.*Console$/',
+            'command' => '/.*Command$/',
+            'trait' => '/.*Trait$/',
+            'interface' => '/.*Interface$/',
+            'enum' => '/.*Enum$/',
         ];
         foreach ($types as $type => $regex) {
             if (preg_match($regex, $path)) {
@@ -107,11 +124,14 @@ class FileModifier
      * @param $fileType
      * @param $contents
      * @return string
+     * @throws ContainerExceptionInterface
+     * @throws NotFoundExceptionInterface
      */
     protected function generateGptQuery($prompt, $fileType, $contents): string
     {
         $trans = app('translator');
         $trans->setLocale('en');
+        // TODO: Why doesn't this work unless you publish the lang files?
         $question = $trans->get('gpt-helper::prompts.start', ['file_type' => $fileType]);
         $question .= $trans->get('gpt-helper::prompts.content', ['content' => $contents]);
         $question .= $trans->get('gpt-helper::prompts.refinement');
@@ -122,6 +142,8 @@ class FileModifier
     }
 
     /**
+     * Get the response from the GPT API
+     *
      * @param mixed $prompt
      * @param $path
      * @param $contents
@@ -134,8 +156,11 @@ class FileModifier
             $this->checkFileType($path),
             $contents
         );
-        $response = $this->gptApiService->ask($question);
+        // Tell the console we are asking the following question:
+        $this->consoleInfoMessage('--- Query sent to ChatGPT ---', $question);
 
+        // Ask the GPI API for a response
+        $response = $this->gptApiService->ask($question);
 
         // get the string after ```php if it exists, otherwise return the after ```
         $response = strpos($response, '```php') !== false ?
@@ -145,14 +170,12 @@ class FileModifier
         // get the string before ```
         $contents = substr($response, 0, strpos($response, '```'));
 
-        // if we are running in the console, lets output the extra details, if its not empty
-        if ($this->app->runningInConsole()) {
-            $context = substr($response, strpos($response, '```') + 12);
-            // strip any new lines and trim the string
-            $test = trim(preg_replace('/\s+/', ' ', $context));
-            if (!empty($test)) {
-                echo $context;
-            }
+        // Context for the command line if its there
+        $context = substr($response, strpos($response, '```') + 12);
+        // strip any new lines and trim the string
+        $test = trim(preg_replace('/\s+/', ' ', $context));
+        if (!empty($test)) {
+            $this->consoleInfoMessage('--- Additional GPT Context ---', $context);
         }
 
         // Fall back to the original contents if the response is empty
@@ -169,5 +192,38 @@ class FileModifier
         }
 
         return $contents;
+    }
+
+    /**
+     * Console error messages
+     *
+     * @return void
+     */
+    protected function consoleError(string $output): void
+    {
+        echo "\033[31m" . PHP_EOL . PHP_EOL;
+        echo '-- GPT Helper Error --'. PHP_EOL;
+        echo $output;
+        echo PHP_EOL . PHP_EOL . "\033[0m";
+    }
+
+
+    /**
+     * Console info messages
+     *
+     * @return void
+     */
+    protected function consoleInfoMessage(string $title, string $body = ''): void
+    {
+        echo "\033[32m" . PHP_EOL . PHP_EOL;
+        echo $title . PHP_EOL;
+        if (!empty($body)) {
+            echo '-----------------------------' . PHP_EOL;
+            echo "\033[0m";
+            echo PHP_EOL . $body . PHP_EOL;
+            echo "\033[32m";
+            echo PHP_EOL . '-----------------------------' . PHP_EOL;
+        }
+        echo PHP_EOL . PHP_EOL . "\033[0m";
     }
 }

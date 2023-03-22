@@ -2,7 +2,7 @@
 
 return [
     'start' => 'I want you to act as a Laravel developer, keep in mind best practices from alexeymezenin/laravel-best-practices and make changes to this file. ',
-    'content' => 'This is the existing code: ```:contents```. ',
+    'content' => 'This is the existing code: ```:content```. ',
     'refinement' => 'Do not write explanations. Do not write comments. Keep it as readable as possible. Only output the new file content and nothing more. ',
     'changes' => 'I wish you to make the following changes: ":prompt". ',
     'end' => 'The new file is: ',

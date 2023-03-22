@@ -6,6 +6,17 @@ use OpenAI\Laravel\Facades\OpenAI;
 
 class GptApiService
 {
+    public $enabled = true;
+
+    public function __construct()
+    {
+        try {
+            OpenAI::chat();
+        } catch (\Exception $e) {
+            $this->enabled = false;
+        }
+    }
+
     public function ask($question): ?string
     {
         try {
