@@ -33,7 +33,17 @@ This will create a resources/lang/vendor/gpt-helper directory, where you can sto
 
 ## Usage
 
-Use the GPT Helper for Laravel in your existing artisan commands or create custom commands that leverage the ChatGPT API. Remember to pass the --prompt option to the commands to modify the file contents using ChatGPT.
+### Try to predict the contents of a file, with context and a prompt
+
+```bash
+php artisan gpt:predict
+ {source : The file we wish to predict}
+ {--prompt= : Add additonal text to give GPT context}
+ {--files= : A comma separated list of classnames/files to use as context}
+ {--summarizedFiles= : Same as files, but use a summary of instead to reduce the query}
+```
+
+### Auto generate files during creation
 
 For example, in your custom command:
 
