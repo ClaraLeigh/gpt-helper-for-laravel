@@ -163,8 +163,8 @@ class FileModifier
         $response = $this->gptApiService->ask($question);
 
         // get the string after ```php if it exists, otherwise return the after ```
-        $response = strpos($response, '```php') !== false ?
-            substr($response, strpos($response, '```php') + 7) :
+        $response = strpos($response, '```<?php') !== false ?
+            substr($response, strpos($response, '```<?php') + 7) :
             substr($response, strpos($response, '```') + 3);
 
         // get the string before ```
