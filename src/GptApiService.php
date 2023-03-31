@@ -22,6 +22,7 @@ class GptApiService
         try {
             $response = OpenAI::chat()->create([
                 'model' => 'gpt-3.5-turbo',
+                'temperature' => 0,
                 'messages' => [[
                     'role' => 'user',
                     'content' => $question,
@@ -30,6 +31,7 @@ class GptApiService
 
             return $response->choices[0]->message->content;
         } catch (\Exception $e) {
+            dd ($e->getMessage());
             return null;
         }
     }

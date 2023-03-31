@@ -11,12 +11,14 @@
   ],
   "require": {
     "php": "^8.0",
+    "guzzlehttp/guzzle": "^7.0.1",
+    "illuminate/filesystem": "*",
     "illuminate/support": "^9.0|^10.0",
-    "illuminate/filesystem": "^9.0|^10.0",
     "illuminate/translation": "^9.0|^10.0",
+    "nikic/php-parser": "^4.15",
     "openai-php/laravel": "^0.4.0",
-    "symfony/console": "^6.2",
-    "guzzlehttp/guzzle": "^7.0.1"
+    "phpdocumentor/reflection-docblock": "^5.3",
+    "symfony/console": "^6.2"
   },
   "require-dev": {
     "phpunit/phpunit": "^9.3.10"
@@ -36,7 +38,10 @@
   "config": {
     "preferred-install": "dist",
     "sort-packages": true,
-    "optimize-autoloader": true
+    "optimize-autoloader": true,
+    "allow-plugins": {
+      "php-http/discovery": true
+    }
   },
   "minimum-stability": "dev",
   "prefer-stable": true
