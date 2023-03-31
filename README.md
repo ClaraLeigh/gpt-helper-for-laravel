@@ -1,6 +1,13 @@
 # GPT Helper for Laravel
 
-This package provides basic integration of GPT (ChatGPT) with Laravel, allowing you to generate templates and modify files using ChatGPT. With the powerful GPT models and Laravel's artisan commands, you can easily customize and enhance your Laravel application.
+---
+
+**Please Note:** This is a very early concept project. At this stage it is very limited.
+
+---
+
+## Project Goal
+The goal of this project is to create open source versions of AI tools for use in PHP applications. At this stage it can predict files that you either give it, or when using the make:xxx command namespace.
 
 ## Installation
 
