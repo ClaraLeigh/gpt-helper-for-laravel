@@ -2,6 +2,7 @@
 
 namespace GptHelperForLaravel;
 
+use GuzzleHttp\Client;
 use OpenAI\Laravel\Facades\OpenAI;
 
 class GptApiService
@@ -17,16 +18,26 @@ class GptApiService
         }
     }
 
-    public function ask($question): ?string
+    /**
+     * Chat with the GPT API
+     *
+     * @param  string|array  $questions
+     * @return string|null
+     */
+    public function ask(string|array $questions): ?string
     {
+        if (is_string($questions)) {
+            $questions = [[
+                'role' => 'user',
+                'content' => $questions,
+            ]];
+        }
         try {
-            $response = OpenAI::chat()->create([
+            $client = $this->client();
+            $response = $client->chat()->create([
                 'model' => 'gpt-3.5-turbo',
                 'temperature' => 0,
-                'messages' => [[
-                    'role' => 'user',
-                    'content' => $question,
-                ]]
+                'messages' => $questions
             ]);
 
             return $response->choices[0]->message->content;
@@ -34,5 +45,18 @@ class GptApiService
             dd ($e->getMessage());
             return null;
         }
+    }
+
+    protected function client()
+    {
+        $apiKey = config('openai.api_key');
+        $organization = config('openai.organization');
+        return \OpenAI::factory()
+            ->withApiKey($apiKey)
+            ->withOrganization($organization) // default: null
+            ->withHttpClient($client = new Client([
+                'timeout'  => 150.0, // 2.5 minutes
+            ]))
+            ->make();
     }
 }

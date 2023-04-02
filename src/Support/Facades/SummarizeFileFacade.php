@@ -4,7 +4,7 @@ namespace GptHelperForLaravel\Support\Facades;
 
 use Illuminate\Support\Facades\Facade;
 
-class SummarizeFile extends Facade
+class SummarizeFileFacade extends Facade
 {
     protected static function getFacadeAccessor()
     {

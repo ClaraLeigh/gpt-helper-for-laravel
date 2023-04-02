@@ -78,6 +78,23 @@ class SummarizeFile
         return $summary;
     }
 
+    /**
+     * @param  Node\Stmt\ClassMethod  $method
+     *
+     * @return mixed|Node\ComplexType|Identifier|Node\Name|string
+     */
+    protected function returnType($method): mixed
+    {
+        if ($method->returnType instanceof Node\NullableType) {
+            return $method->returnType->type;
+        }
+        try {
+            return ($method->returnType ?: 'mixed');
+        } catch (\Exception|\Throwable $e) {
+            return 'mixed';
+        }
+    }
+
 
     private function validateFileExists(string $filePath): void
     {
@@ -118,9 +135,12 @@ class SummarizeFile
     private function summarizeMethod(Node\Stmt\ClassMethod $method): string
     {
         $methodFlags    = $this->flagsToString($method->flags);
-        $summary = "  - (" . $methodFlags . ") " . $method->name . "(" . implode(', ', array_map(function ($param) {
+        $summary = "  - (" . $methodFlags . ") " . $method->name . "(";
+        $summary .= implode(', ', array_map(function ($param) {
                 return $this->prettyPrinter->prettyPrint([$param]);
-            }, $method->params)) . "): " . ($method->returnType ?: 'mixed');
+            }, $method->params));
+
+        $summary .= "): ".$this->returnType($method);
 
         // Add the method summary if it exists
         if ($method->getDocComment() !== null) {

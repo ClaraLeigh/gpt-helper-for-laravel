@@ -2,13 +2,13 @@
 
 namespace GptHelperForLaravel\Commands;
 
-use GptHelperForLaravel\GptApiService;
 use GptHelperForLaravel\Support\ClassNameResolver;
-use GptHelperForLaravel\Support\Facades\SummarizeFile;
-use Illuminate\Console\Command;
+use GptHelperForLaravel\Support\Facades\SummarizeFileFacade;
 use Illuminate\Support\Facades\File;
+use Psr\Container\ContainerExceptionInterface;
+use Psr\Container\NotFoundExceptionInterface;
 
-class PredictFileContents extends Command
+class PredictFileCommand extends Command
 {
     /**
      * The name and signature of the console command.
@@ -31,14 +31,6 @@ class PredictFileContents extends Command
 
     protected ClassNameResolver $classResolver;
 
-    public function __construct(
-        protected GptApiService $gptApiService
-    )
-    {
-        $this->classResolver = new ClassNameResolver();
-        parent::__construct();
-    }
-
     /**
      * Execute the console command.
      *
@@ -55,51 +47,25 @@ class PredictFileContents extends Command
         $relatedFiles = [];
         if (!empty($this->option('summaryFiles'))) {
             $relatedFiles['summarized'] = $this->getFiles(true);
+            echo $relatedFiles['summarized'];
+            exit;
         }
         if (!empty($this->option('files'))) {
             $relatedFiles['files'] = $this->getFiles(false);
         }
 
         // Compile a prompt
-        $question = $this->generateGptQuery($this->option('prompt'), $sourceFileContents, $relatedFiles);
+        $question = $this->createInitalQuery($this->option('prompt'), $sourceFileContents, $relatedFiles);
 
-        return $this->getResponse($question);
+        $questions = [[
+            'role' => 'user',
+            'content' => $question,
+        ]];
+
+        return $this->getResponse($questions);
     }
 
-    protected function getResponse($question): int
-    {
-        // Tell the console we are asking the following question:
-        $this->info('--- Query sent to ChatGPT ---');
-        $this->info($question);
-        $this->info('--- End of Query ---');
-
-        // Ask the GPI API for a response
-        $response = $this->gptApiService->ask($question);
-
-        // Fall back to the original contents if the response is empty
-        if (empty($response)) {
-            $this->error('The GPT API returned an empty response.');
-            return Command::FAILURE;
-        }
-
-        $this->info('--- Response from ChatGPT ---');
-        $this->info($response);
-        $this->info('--- End of Response ---');
-
-        return Command::SUCCESS;
-    }
-
-    /**
-     * Generate the query to send to the API
-     *
-     * @param string $prompt
-     * @param string $source
-     * @param array $relatedFiles
-     * @return string
-     * @throws \Psr\Container\ContainerExceptionInterface
-     * @throws \Psr\Container\NotFoundExceptionInterface
-     */
-    protected function generateGptQuery($prompt, $source, $relatedFiles): string
+    protected function createInitalQuery(?string $prompt, string $source, array $relatedFiles = []): string
     {
         $trans = app('translator');
         $trans->setLocale('en');
@@ -125,6 +91,36 @@ class PredictFileContents extends Command
         return $question;
     }
 
+    /**
+     * Generate the query to send to the API
+     *
+     * @param string $prompt
+     * @param string $source
+     * @param array $relatedFiles
+     * @return string
+     * @throws \Psr\Container\ContainerExceptionInterface
+     * @throws \Psr\Container\NotFoundExceptionInterface
+     */
+    protected function generateGptQuery(?string $prompt, string $source, array $questions = []): array
+    {
+        $trans = app('translator');
+        $trans->setLocale('en');
+        // TODO: Why doesn't this work unless you publish the lang files?
+        $question = $trans->get('gpt-helper::prompts.start') . PHP_EOL;
+        $question .= $trans->get('gpt-helper::prompts.content', ['content' => $source]);
+        $question .= PHP_EOL;
+        $question .= $trans->get('gpt-helper::prompts.refinement');
+        if (!empty($prompt)) {
+            $question .= rtrim($prompt, ' ') . PHP_EOL;
+        }
+        $question .= $trans->get('gpt-helper::prompts.end');
+        // TODO: Change this to using system prompts and another user prompt to clean up the code
+        return [[
+            'role' => 'user',
+            'content' => $question,
+        ]];
+    }
+
     protected function getFiles($summary): string
     {
         // Get all the related files, then get the contents of each file, then simplify the files
@@ -137,7 +133,7 @@ class PredictFileContents extends Command
             $fileName = File::basename($path);
             if ($summary) {
                 // Summarise the contents of the file
-                $contents = SummarizeFile::run($path);
+                $contents = SummarizeFileFacade::run($path);
             } else {
                 // Get the contents of the file
                 $contents = File::get($path);

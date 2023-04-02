@@ -2,7 +2,8 @@
 
 namespace GptHelperForLaravel;
 
-use GptHelperForLaravel\Commands\PredictFileContents;
+use GptHelperForLaravel\Commands\GenerateCodeCommand;
+use GptHelperForLaravel\Commands\PredictFileCommand;
 use GptHelperForLaravel\Support\SummarizeFile;
 use Illuminate\Console\Application;
 use Illuminate\Support\ServiceProvider;
@@ -38,7 +39,8 @@ class GptServiceProvider extends ServiceProvider
         if ($this->app->runningInConsole()) {
 //            dd('aaa');
             $this->commands([
-                PredictFileContents::class,
+                PredictFileCommand::class,
+                GenerateCodeCommand::class,
             ]);
         }
 

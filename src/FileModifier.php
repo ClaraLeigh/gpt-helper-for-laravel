@@ -136,7 +136,7 @@ class FileModifier
         $question .= $trans->get('gpt-helper::prompts.content', ['content' => $contents]);
         $question .= $trans->get('gpt-helper::prompts.refinement');
         $question .= $trans->get('gpt-helper::prompts.types.' . $fileType) . ' ';
-        $question .= $trans->get('gpt-helper::prompts.changes', ['changes' => $prompt]);
+        $question .= $trans->get('gpt-helper::prompts.changes', ['prompt' => $prompt]);
         $question .= $trans->get('gpt-helper::prompts.end');
         return $question;
     }

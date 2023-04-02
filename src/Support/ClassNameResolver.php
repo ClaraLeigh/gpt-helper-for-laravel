@@ -31,7 +31,7 @@ class ClassNameResolver
             return $fullName;
         }
 
-        $basePath = app_path();
+        $basePath = app_path() . '/../vendor/claraleigh/gpt-helper-for-laravel/src';
         $iterator = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($basePath), RecursiveIteratorIterator::SELF_FIRST);
 
         $hasNamespace = false;
