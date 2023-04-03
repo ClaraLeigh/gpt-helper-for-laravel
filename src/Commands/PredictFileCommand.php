@@ -95,19 +95,20 @@ class PredictFileCommand extends Command
      * Generate the query to send to the API
      *
      * @param string $prompt
-     * @param string $source
+     * @param string $context
      * @param array $relatedFiles
+     *
      * @return string
      * @throws \Psr\Container\ContainerExceptionInterface
      * @throws \Psr\Container\NotFoundExceptionInterface
      */
-    protected function generateGptQuery(?string $prompt, string $source, array $questions = []): array
+    protected function generateGptQuery(?string $prompt, ?string $context = '', array $questions = []): array
     {
         $trans = app('translator');
         $trans->setLocale('en');
         // TODO: Why doesn't this work unless you publish the lang files?
         $question = $trans->get('gpt-helper::prompts.start') . PHP_EOL;
-        $question .= $trans->get('gpt-helper::prompts.content', ['content' => $source]);
+        $question .= $trans->get('gpt-helper::prompts.content', ['content' => $context]);
         $question .= PHP_EOL;
         $question .= $trans->get('gpt-helper::prompts.refinement');
         if (!empty($prompt)) {
@@ -121,37 +122,4 @@ class PredictFileCommand extends Command
         ]];
     }
 
-    protected function getFiles($summary): string
-    {
-        // Get all the related files, then get the contents of each file, then simplify the files
-        $relatedFiles = $this->option($summary ? 'summaryFiles' : 'files');
-        $relatedFiles = explode(',', $relatedFiles);
-        $relatedFilesContents = [];
-        foreach ($relatedFiles as $relatedFile) {
-            // If this is a php class name, then convert it to a path, use resolve to get the path, then use reflection to get the path
-            $path = $this->classResolver->resolve($relatedFile);
-            $fileName = File::basename($path);
-            if ($summary) {
-                // Summarise the contents of the file
-                $contents = SummarizeFileFacade::run($path);
-            } else {
-                // Get the contents of the file
-                $contents = File::get($path);
-            }
-            $relatedFilesContents[$fileName] = $contents;
-        }
-
-        // Combine the contents of the related files into a single string
-        $relatedFilesContents = implode(PHP_EOL, array_map(
-            function ($content, $filename) {
-                return $filename.PHP_EOL.$content.PHP_EOL.PHP_EOL;
-            },
-            $relatedFilesContents,
-            array_keys($relatedFilesContents)
-        ));
-        // Trim the newlines from the end of the string
-        $relatedFilesContents = rtrim($relatedFilesContents, PHP_EOL);
-
-        return $relatedFilesContents;
-    }
 }

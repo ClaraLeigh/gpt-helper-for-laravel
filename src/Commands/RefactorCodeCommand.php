@@ -73,20 +73,27 @@ class RefactorCodeCommand extends Command
         $options = $this->generateOptionsArray();
         $refactoringTechniques = $this->generateRefactoringTechniquesList($options);
 
-        // TODO: handle replies from the user loop
-        $questions = [
-            [
-                'role' => 'system',
-                'content' => "You are an AI code refactoring assistant. Refactor the provided PHP/Laravel code using the requested refactoring techniques."
-            ],
-            [
-                'role' => 'user',
-                'content' => "Apply these refactoring techniques: $refactoringTechniques."
-            ],
-            [
-                'role' => 'user',
-                'content' => "Here's the code to refactor:\n$context"
-            ],
+        if (empty($questions)) {
+            $questions = [
+                [
+                    'role' => 'system',
+                    'content' => "You are an AI code refactoring assistant. Refactor the provided PHP/Laravel code using the requested refactoring techniques."
+                ],
+                [
+                    'role' => 'user',
+                    'content' => "Apply these refactoring techniques: $refactoringTechniques."
+                ],
+            ];
+        } else {
+            // remove all user questions that are not system questions or the user prompt about refactoring techniques
+            $questions = array_filter($questions, function ($question) {
+                return $question['role'] === 'system' || str_contains($question['content'], 'Apply these refactoring techniques');
+            });
+        }
+
+        $questions[] = [
+            'role' => 'user',
+            'content' => "Here's the code to refactor:\n$context"
         ];
 
         if ($prompt) {

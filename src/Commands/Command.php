@@ -4,6 +4,8 @@ namespace GptHelperForLaravel\Commands;
 
 use GptHelperForLaravel\GptApiService;
 use GptHelperForLaravel\Support\ClassNameResolver;
+use GptHelperForLaravel\Support\Facades\SummarizeFileFacade;
+use Illuminate\Support\Facades\File;
 use Psr\Container\ContainerExceptionInterface;
 use Psr\Container\NotFoundExceptionInterface;
 
@@ -110,5 +112,39 @@ abstract class Command extends \Illuminate\Console\Command
                 'content' => $prompt,
             ];
         }
+    }
+
+    protected function getFiles($summary): string
+    {
+        // Get all the related files, then get the contents of each file, then simplify the files
+        $relatedFiles = $this->option($summary ? 'summaryFiles' : 'files');
+        $relatedFiles = explode(',', $relatedFiles);
+        $relatedFilesContents = [];
+        foreach ($relatedFiles as $relatedFile) {
+            // If this is a php class name, then convert it to a path, use resolve to get the path, then use reflection to get the path
+            $path = $this->classResolver->resolve($relatedFile);
+            $fileName = File::basename($path);
+            if ($summary) {
+                // Summarise the contents of the file
+                $contents = SummarizeFileFacade::run($path);
+            } else {
+                // Get the contents of the file
+                $contents = File::get($path);
+            }
+            $relatedFilesContents[$fileName] = $contents;
+        }
+
+        // Combine the contents of the related files into a single string
+        $relatedFilesContents = implode(PHP_EOL, array_map(
+            function ($content, $filename) {
+                return $filename.PHP_EOL.$content.PHP_EOL.PHP_EOL;
+            },
+            $relatedFilesContents,
+            array_keys($relatedFilesContents)
+        ));
+        // Trim the newlines from the end of the string
+        $relatedFilesContents = rtrim($relatedFilesContents, PHP_EOL);
+
+        return $relatedFilesContents;
     }
 }

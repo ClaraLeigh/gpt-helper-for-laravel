@@ -4,6 +4,7 @@ namespace GptHelperForLaravel;
 
 use GptHelperForLaravel\Commands\GenerateCodeCommand;
 use GptHelperForLaravel\Commands\PredictFileCommand;
+use GptHelperForLaravel\Commands\RefactorCodeCommand;
 use GptHelperForLaravel\Support\SummarizeFile;
 use Illuminate\Console\Application;
 use Illuminate\Support\ServiceProvider;
@@ -37,10 +38,10 @@ class GptServiceProvider extends ServiceProvider
     public function boot()
     {
         if ($this->app->runningInConsole()) {
-//            dd('aaa');
             $this->commands([
                 PredictFileCommand::class,
                 GenerateCodeCommand::class,
+                RefactorCodeCommand::class,
             ]);
         }
 
