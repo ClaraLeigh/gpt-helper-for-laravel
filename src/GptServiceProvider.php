@@ -3,6 +3,7 @@
 namespace GptHelperForLaravel;
 
 use GptHelperForLaravel\Commands\GenerateCodeCommand;
+use GptHelperForLaravel\Commands\GenerateTestCasesCommand;
 use GptHelperForLaravel\Commands\PredictFileCommand;
 use GptHelperForLaravel\Commands\RefactorCodeCommand;
 use GptHelperForLaravel\Support\SummarizeFile;
@@ -42,6 +43,7 @@ class GptServiceProvider extends ServiceProvider
                 PredictFileCommand::class,
                 GenerateCodeCommand::class,
                 RefactorCodeCommand::class,
+                GenerateTestCasesCommand::class,
             ]);
         }
 
