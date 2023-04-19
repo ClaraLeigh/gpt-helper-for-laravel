@@ -12,7 +12,7 @@ class GptApiService
     public function __construct()
     {
         try {
-            OpenAI::chat();
+//            OpenAI::chat();
         } catch (\Exception $e) {
             $this->enabled = false;
         }

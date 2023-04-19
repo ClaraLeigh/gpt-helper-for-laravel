@@ -4,12 +4,15 @@ namespace GptHelperForLaravel\Commands;
 
 use GptHelperForLaravel\Support\ClassNameResolver;
 use GptHelperForLaravel\Support\Facades\SummarizeFileFacade;
+use GptHelperForLaravel\Traits\HasRelatedFiles;
 use Illuminate\Support\Facades\File;
 use Psr\Container\ContainerExceptionInterface;
 use Psr\Container\NotFoundExceptionInterface;
 
 class PredictFileCommand extends Command
 {
+    use HasRelatedFiles;
+
     /**
      * The name and signature of the console command.
      *
@@ -42,20 +45,11 @@ class PredictFileCommand extends Command
             $this->argument('source')
         );
 
-        // Get the contents of the file
-        $sourceFileContents   = File::get($source);
-        $relatedFiles = [];
-        if (!empty($this->option('summaryFiles'))) {
-            $relatedFiles['summarized'] = $this->getFiles(true);
-            echo $relatedFiles['summarized'];
-            exit;
-        }
-        if (!empty($this->option('files'))) {
-            $relatedFiles['files'] = $this->getFiles(false);
-        }
-
         // Compile a prompt
-        $question = $this->createInitalQuery($this->option('prompt'), $sourceFileContents, $relatedFiles);
+        $question = $this->createInitalQuery(
+            $this->option('prompt'),
+            File::get($source)
+        );
 
         $questions = [[
             'role' => 'user',
@@ -65,7 +59,7 @@ class PredictFileCommand extends Command
         return $this->getResponse($questions);
     }
 
-    protected function createInitalQuery(?string $prompt, string $source, array $relatedFiles = []): string
+    protected function createInitalQuery(?string $prompt, string $source): string
     {
         $trans = app('translator');
         $trans->setLocale('en');
@@ -73,16 +67,7 @@ class PredictFileCommand extends Command
         $question = $trans->get('gpt-helper::prompts.start') . PHP_EOL;
         $question .= $trans->get('gpt-helper::prompts.content', ['content' => $source]);
         $question .= PHP_EOL;
-        if (!empty($relatedFiles['summarized'])) {
-            $question .= "When creating in file, please keep in mind these related summarized files. Assume for context but don't use this directly:" . PHP_EOL . "```" . PHP_EOL;
-            $question .= $relatedFiles['summarized'] . PHP_EOL;
-            $question .= "```" . PHP_EOL;
-        }
-        if (!empty($relatedFiles['files'])) {
-            $question .= "When creating in file, please keep in mind these related files:" . PHP_EOL . "```" . PHP_EOL;
-            $question .= $relatedFiles['files'] . PHP_EOL;
-            $question .= "```" . PHP_EOL;
-        }
+        $question .= $this->relatedFilesPrompt();
         $question .= $trans->get('gpt-helper::prompts.refinement');
         if (!empty($prompt)) {
             $question .= rtrim($prompt, ' ') . PHP_EOL;
@@ -121,5 +106,6 @@ class PredictFileCommand extends Command
             'content' => $question,
         ]];
     }
+
 
 }

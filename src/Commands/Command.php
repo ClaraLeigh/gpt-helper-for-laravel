@@ -61,7 +61,13 @@ abstract class Command extends \Illuminate\Console\Command
     protected function outputQuestion($questions): void
     {
         $this->info('--- Query sent to ChatGPT ---');
-        dump($questions);
+        // loop through the $questions array, then for each $value, get the key and value of each item and echo it
+        foreach ($questions as $question) {
+            $this->info('------------------------');
+            $role = $question['role'];
+            $prompt = $question['content'];
+            $this->info("{$role}: {$prompt}");
+        }
         $this->info('--- End of Query ---');
     }
 
@@ -133,7 +139,6 @@ abstract class Command extends \Illuminate\Console\Command
             }
             $relatedFilesContents[$fileName] = $contents;
         }
-
         // Combine the contents of the related files into a single string
         $relatedFilesContents = implode(PHP_EOL, array_map(
             function ($content, $filename) {
