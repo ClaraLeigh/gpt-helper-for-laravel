@@ -31,7 +31,13 @@ class ClassNameResolver
             return $fullName;
         }
 
-        $basePath = app_path();
+        // If starts with a slash, we should start from the root of the project
+        if (str_starts_with($fullName, '/')) {
+            $basePath = base_path();
+            $fullName = substr($fullName, 1);
+        } else {
+            $basePath = app_path();
+        }
         $iterator = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($basePath), RecursiveIteratorIterator::SELF_FIRST);
 
         $hasNamespace = false;
