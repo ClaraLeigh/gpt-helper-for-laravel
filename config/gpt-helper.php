@@ -25,7 +25,7 @@ return [
     |
     */
 
-    'model' => env('GPT_MODEL', 'davinci-codex'),
+    'model' => env('GPT_MODEL', 'gpt-3.5-turbo'),
 
     /*
     |--------------------------------------------------------------------------
@@ -39,7 +39,7 @@ return [
 
     'gpt_settings' => [
         'max_tokens' => env('GPT_MAX_TOKENS', 100),
-        'temperature' => env('GPT_TEMPERATURE', 0.7),
+        'temperature' => env('GPT_TEMPERATURE', 0.0),
         'n' => env('GPT_N', 1),
         'stop' => env('GPT_STOP', null),
     ],

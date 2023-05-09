@@ -35,8 +35,8 @@ class GptApiService
         try {
             $client = $this->client();
             $response = $client->chat()->create([
-                'model' => 'gpt-3.5-turbo',
-                'temperature' => 0,
+                'model' => config('gpt-helper.model'),
+                'temperature' => config('gpt-helper.gpt_settings.temperature'),
                 'messages' => $questions
             ]);
 
